@@ -9,6 +9,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include "voronoi_layer/dynamicvoronoi.h"
+#include <boost/thread.hpp>
 
 namespace costmap_2d
 {
@@ -22,6 +23,7 @@ public:
   virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
                             double* max_x, double* max_y);
   virtual void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j);
+  const DynamicVoronoi* getVoronoi();
 
 private:
   void publishVoronoiGrid(costmap_2d::Costmap2D& master_grid);
@@ -31,7 +33,9 @@ private:
   ros::Publisher voronoi_grid_pub_;
 
   DynamicVoronoi voronoi_;
-  bool initialized_;
+  int last_size_x_;
+  int last_size_y_;
+  boost::mutex mutex_;
 };
 
 }  // namespace costmap_2d

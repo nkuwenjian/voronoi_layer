@@ -6,7 +6,7 @@ PLUGINLIB_EXPORT_CLASS(costmap_2d::VoronoiLayer, costmap_2d::Layer)
 
 namespace costmap_2d
 {
-VoronoiLayer::VoronoiLayer() : initialized_(false)
+VoronoiLayer::VoronoiLayer() : last_size_x_(0), last_size_y_(0)
 {
 }
 
@@ -32,6 +32,13 @@ void VoronoiLayer::reconfigureCB(costmap_2d::GenericPluginConfig& config, uint32
   enabled_ = config.enabled;
 }
 
+const DynamicVoronoi* VoronoiLayer::getVoronoi()
+{
+  boost::mutex::scoped_lock lock(mutex_);
+
+  return &voronoi_;
+}
+
 void VoronoiLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
                                 double* max_x, double* max_y)
 {
@@ -44,12 +51,16 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
   if (!enabled_)
     return;
 
+  boost::mutex::scoped_lock lock(mutex_);
+
   int size_x = master_grid.getSizeInCellsX();
   int size_y = master_grid.getSizeInCellsY();
-  if (!initialized_)
+  if (last_size_x_ != size_x || last_size_y_ != size_y)
   {
     voronoi_.initializeEmpty(size_x, size_y);
-    initialized_ = true;
+
+    last_size_x_ = size_x;
+    last_size_y_ = size_y;
   }
 
   std::vector<IntPoint> new_free_cells, new_occupied_cells;
