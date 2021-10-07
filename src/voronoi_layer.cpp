@@ -8,10 +8,13 @@ namespace costmap_2d
 {
 VoronoiLayer::VoronoiLayer() : last_size_x_(0), last_size_y_(0)
 {
+  mutex_ = new boost::mutex();
 }
 
 VoronoiLayer::~VoronoiLayer()
 {
+  if (mutex_)
+    delete mutex_;
 }
 
 void VoronoiLayer::onInitialize()
@@ -32,11 +35,14 @@ void VoronoiLayer::reconfigureCB(costmap_2d::GenericPluginConfig& config, uint32
   enabled_ = config.enabled;
 }
 
-const DynamicVoronoi* VoronoiLayer::getVoronoi()
+const DynamicVoronoi* VoronoiLayer::getVoronoi() const
 {
-  boost::mutex::scoped_lock lock(mutex_);
-
   return &voronoi_;
+}
+
+boost::mutex* VoronoiLayer::getMutex()
+{
+  return mutex_;
 }
 
 void VoronoiLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
@@ -51,7 +57,7 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
   if (!enabled_)
     return;
 
-  boost::mutex::scoped_lock lock(mutex_);
+  boost::unique_lock<boost::mutex> lock(*mutex_);
 
   int size_x = master_grid.getSizeInCellsX();
   int size_y = master_grid.getSizeInCellsY();
@@ -91,7 +97,7 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
   // end timing
   const auto end_t = std::chrono::system_clock::now();
   std::chrono::duration<double> timediff = end_t - start_t;
-  ROS_INFO("Runtime=%.3fms.", timediff.count() * 1e3);
+  ROS_DEBUG("Runtime=%.3fms.", timediff.count() * 1e3);
 
   publishVoronoiGrid(master_grid);
 }
