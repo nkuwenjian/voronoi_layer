@@ -47,8 +47,8 @@ public:
   
   //! returns the obstacle distance at the specified location
   float getDistance( int x, int y ) const {
-    if( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY)) return data[x][y].dist; 
-    else return -INFINITY;
+    assert( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY));
+    return data[x][y].dist; 
   }
   //! returns whether the specified cell is part of the (pruned) Voronoi graph
   bool isVoronoi( int x, int y ) const {

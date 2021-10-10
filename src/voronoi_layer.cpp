@@ -52,6 +52,22 @@ void VoronoiLayer::updateBounds(double robot_x, double robot_y, double robot_yaw
     return;
 }
 
+void VoronoiLayer::outlineMap(unsigned char* costarr, int nx, int ny, unsigned char value)
+{
+  unsigned char* pc = costarr;
+  for (int i = 0; i < nx; i++)
+    *pc++ = value;
+  pc = costarr + (ny - 1) * nx;
+  for (int i = 0; i < nx; i++)
+    *pc++ = value;
+  pc = costarr;
+  for (int i = 0; i < ny; i++, pc += nx)
+    *pc = value;
+  pc = costarr + nx - 1;
+  for (int i = 0; i < ny; i++, pc += nx)
+    *pc = value;
+}
+
 void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j, int max_i, int max_j)
 {
   if (!enabled_)
@@ -61,6 +77,8 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
 
   int size_x = master_grid.getSizeInCellsX();
   int size_y = master_grid.getSizeInCellsY();
+  outlineMap(master_grid.getCharMap(), size_x, size_y, costmap_2d::LETHAL_OBSTACLE);
+
   if (last_size_x_ != size_x || last_size_y_ != size_y)
   {
     voronoi_.initializeEmpty(size_x, size_y);
@@ -74,10 +92,10 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, in
   {
     for (int i = 0; i < size_x; i++)
     {
-      if (voronoi_.isOccupied(i, j) && master_grid.getCost(i, j) == FREE_SPACE)
+      if (voronoi_.isOccupied(i, j) && master_grid.getCost(i, j) == costmap_2d::FREE_SPACE)
         new_free_cells.push_back(IntPoint(i, j));
 
-      if (!voronoi_.isOccupied(i, j) && master_grid.getCost(i, j) == LETHAL_OBSTACLE)
+      if (!voronoi_.isOccupied(i, j) && master_grid.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
         new_occupied_cells.push_back(IntPoint(i, j));
     }
   }

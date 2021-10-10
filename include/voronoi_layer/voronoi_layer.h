@@ -28,6 +28,7 @@ public:
 
 private:
   void publishVoronoiGrid(costmap_2d::Costmap2D& master_grid);
+  void outlineMap(unsigned char* costarr, int nx, int ny, unsigned char value);
 
   void reconfigureCB(costmap_2d::GenericPluginConfig& config, uint32_t level);
   dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>* dsrv_;
