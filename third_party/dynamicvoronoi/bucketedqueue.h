@@ -5,8 +5,8 @@
 #include <set>
 #include <queue>
 #include <assert.h>
+#include "point.h"
 #include <map>
-#include "voronoi_layer/point.h"
 
 //! Priority queue for integer coordinates with squared distances as priority.
 /** A priority queue that uses buckets to group elements with the same priority.
@@ -20,13 +20,13 @@ class BucketPrioQueue {
 
 public:
   //! Standard constructor
-  /** Standard constructor. When called for the first time it creates a look up table 
+  /** Standard constructor. When called for the first time it creates a look up table
    *  that maps square distances to bucket numbers, which might take some time...
    */
-  BucketPrioQueue(); 
+  BucketPrioQueue();
 
 
-  void clear() { 
+  void clear() {
     buckets.clear();
     count = 0;
     nextPop = buckets.end();
@@ -38,7 +38,7 @@ public:
   void push(int prio, T t);
   //! return and pop the element with the lowest squared distance */
   T pop();
-  
+
   int size() { return count; }
   int getNumBuckets() { return buckets.size(); }
 
@@ -47,9 +47,9 @@ public:
   }
 
 private:
-  
+
   int count;
-  
+
   typedef std::map< int, std::queue<T> > BucketType;
   BucketType buckets;
   typename BucketType::iterator nextPop;
@@ -58,4 +58,3 @@ private:
 #include "bucketedqueue.hxx"
 
 #endif
-

@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include third_party
   LIBRARIES voronoi_layer
   CATKIN_DEPENDS costmap_2d dynamic_reconfigure nav_msgs roscpp
 #  DEPENDS system_lib
@@ -23,8 +23,9 @@ catkin_package(
 
 include_directories(
   include
+  third_party
   ${catkin_INCLUDE_DIRS}
 )
 
-add_library(voronoi_layer src/dynamicvoronoi.cpp src/voronoi_layer.cpp)
+add_library(voronoi_layer third_party/dynamicvoronoi/dynamicvoronoi.cpp src/voronoi_layer.cpp)
 target_link_libraries(voronoi_layer ${catkin_LIBRARIES})

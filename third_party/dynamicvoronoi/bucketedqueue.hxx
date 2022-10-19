@@ -1,4 +1,4 @@
-#include "voronoi_layer/bucketedqueue.h"
+#include "bucketedqueue.h"
 
 #include "limits.h"
 #include <stdio.h>
@@ -36,4 +36,3 @@ T BucketPrioQueue<T>::pop() {
   count--;
   return p;
 }
-

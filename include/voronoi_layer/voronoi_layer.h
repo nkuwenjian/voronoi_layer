@@ -8,7 +8,7 @@
 #include <costmap_2d/GenericPluginConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include "voronoi_layer/dynamicvoronoi.h"
+#include "dynamicvoronoi/dynamicvoronoi.h"
 #include <boost/thread.hpp>
 
 namespace costmap_2d

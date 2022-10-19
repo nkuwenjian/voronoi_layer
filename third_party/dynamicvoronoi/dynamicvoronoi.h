@@ -6,15 +6,14 @@
 #include <stdio.h>
 #include <limits.h>
 #include <queue>
-#include <math.h>
 
-#include "voronoi_layer/bucketedqueue.h"
+#include "bucketedqueue.h"
 
 //! A DynamicVoronoi object computes and updates a distance map and Voronoi diagram.
 class DynamicVoronoi {
-  
+
 public:
-  
+
   DynamicVoronoi();
   ~DynamicVoronoi();
 
@@ -44,31 +43,22 @@ public:
   int getNumVoronoiNeighborsAlternative(int x, int y);
   //! returns whether the specified cell is part of the alternatively pruned diagram. See updateAlternativePrunedDiagram.
   bool isVoronoiAlternative( int x, int y );
-  
+
   //! returns the obstacle distance at the specified location
-  float getDistance( int x, int y ) const {
-    assert( (x>=0) && (x<sizeX) && (y>=0) && (y<sizeY));
-    return data[x][y].dist; 
-  }
+  float getDistance( int x, int y );
   //! returns whether the specified cell is part of the (pruned) Voronoi graph
-  bool isVoronoi( int x, int y ) const {
-    dataCell c = data[x][y];
-    return (c.voronoi==free || c.voronoi==voronoiKeep);
-  }
+  bool isVoronoi( int x, int y );
   //! checks whether the specficied location is occupied
-  bool isOccupied(int x, int y) const {
-    dataCell c = data[x][y];
-    return (c.obstX==x && c.obstY==y);
-  }
+  bool isOccupied(int x, int y);
   //! write the current distance map and voronoi diagram as ppm file
   void visualize(const char* filename="result.ppm");
 
   //! returns the horizontal size of the workspace/map
-  unsigned int getSizeX() const {return sizeX;}
+  unsigned int getSizeX() {return sizeX;}
   //! returns the vertical size of the workspace/map
-  unsigned int getSizeY() const {return sizeY;}
+  unsigned int getSizeY() {return sizeY;}
 
-private:  
+private:
   struct dataCell {
     float dist;
     char voronoi;
@@ -85,7 +75,7 @@ private:
   typedef enum {pruned, keep, retry} markerMatchResult;
 
 
-  
+
   // methods
   void setObstacle(int x, int y);
   void removeObstacle(int x, int y);
@@ -128,4 +118,3 @@ private:
 
 
 #endif
-
