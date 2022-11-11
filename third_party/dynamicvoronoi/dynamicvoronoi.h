@@ -36,27 +36,27 @@ public:
   //! prune the Voronoi diagram by globally revisiting all Voronoi nodes. Takes more time but gives a more sparsely pruned Voronoi graph. You need to call this after every call to udpate()
   void updateAlternativePrunedDiagram();
   //! retrieve the alternatively pruned diagram. see updateAlternativePrunedDiagram()
-  int** alternativePrunedDiagram(){
+  int** alternativePrunedDiagram() const {
     return alternativeDiagram;
   };
   //! retrieve the number of neighbors that are Voronoi nodes (4-connected)
-  int getNumVoronoiNeighborsAlternative(int x, int y);
+  int getNumVoronoiNeighborsAlternative(int x, int y) const;
   //! returns whether the specified cell is part of the alternatively pruned diagram. See updateAlternativePrunedDiagram.
-  bool isVoronoiAlternative( int x, int y );
+  bool isVoronoiAlternative( int x, int y ) const;
 
   //! returns the obstacle distance at the specified location
-  float getDistance( int x, int y );
+  float getDistance( int x, int y ) const;
   //! returns whether the specified cell is part of the (pruned) Voronoi graph
-  bool isVoronoi( int x, int y );
+  bool isVoronoi( int x, int y ) const;
   //! checks whether the specficied location is occupied
-  bool isOccupied(int x, int y);
+  bool isOccupied(int x, int y) const;
   //! write the current distance map and voronoi diagram as ppm file
   void visualize(const char* filename="result.ppm");
 
   //! returns the horizontal size of the workspace/map
-  unsigned int getSizeX() {return sizeX;}
+  unsigned int getSizeX() const {return sizeX;}
   //! returns the vertical size of the workspace/map
-  unsigned int getSizeY() {return sizeY;}
+  unsigned int getSizeY() const {return sizeY;}
 
 private:
   struct dataCell {

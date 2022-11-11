@@ -254,17 +254,17 @@ void DynamicVoronoi::update(bool updateRealDist) {
   }
 }
 
-float DynamicVoronoi::getDistance( int x, int y ) {
+float DynamicVoronoi::getDistance( int x, int y ) const {
   if( (x>0) && (x<sizeX) && (y>0) && (y<sizeY)) return data[x][y].dist;
   else return -INFINITY;
 }
 
-bool DynamicVoronoi::isVoronoi( int x, int y ) {
+bool DynamicVoronoi::isVoronoi( int x, int y ) const {
   dataCell c = data[x][y];
   return (c.voronoi==free || c.voronoi==voronoiKeep);
 }
 
-bool DynamicVoronoi::isVoronoiAlternative(int x, int y) {
+bool DynamicVoronoi::isVoronoiAlternative(int x, int y) const {
   int v = alternativeDiagram[x][y];
   return (v == free || v == voronoiKeep);
 }
@@ -365,7 +365,7 @@ void DynamicVoronoi::reviveVoroNeighbors(int &x, int &y) {
 }
 
 
-bool DynamicVoronoi::isOccupied(int x, int y) {
+bool DynamicVoronoi::isOccupied(int x, int y) const {
   dataCell c = data[x][y];
   return (c.obstX==x && c.obstY==y);
 }
@@ -643,7 +643,7 @@ bool DynamicVoronoi::markerMatchAlternative(int x, int y) {
   return true;
 }
 
-int DynamicVoronoi::getNumVoronoiNeighborsAlternative(int x, int y) {
+int DynamicVoronoi::getNumVoronoiNeighborsAlternative(int x, int y) const {
   int count = 0;
   for (int dx = -1; dx <= 1; dx++) {
     for (int dy = -1; dy <= 1; dy++) {

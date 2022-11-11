@@ -35,9 +35,9 @@ void VoronoiLayer::reconfigureCB(costmap_2d::GenericPluginConfig& config, uint32
   enabled_ = config.enabled;
 }
 
-const DynamicVoronoi* VoronoiLayer::getVoronoi() const
+const DynamicVoronoi& VoronoiLayer::getVoronoi() const
 {
-  return &voronoi_;
+  return voronoi_;
 }
 
 boost::mutex* VoronoiLayer::getMutex()
