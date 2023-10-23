@@ -33,6 +33,7 @@
 
 #include <chrono>  // NOLINT
 
+#include "glog/logging.h"
 #include "pluginlib/class_list_macros.h"
 
 PLUGINLIB_EXPORT_CLASS(costmap_2d::VoronoiLayer, costmap_2d::Layer)
@@ -48,60 +49,52 @@ void VoronoiLayer::onInitialize() {
   dsrv_ = std::make_unique<
       dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>(nh);
   dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType
-      cb = boost::bind(&VoronoiLayer::reconfigureCB, this, _1, _2);
+      cb = boost::bind(&VoronoiLayer::ReconfigureCB, this, _1, _2);
   dsrv_->setCallback(cb);
 }
 
-void VoronoiLayer::reconfigureCB(const costmap_2d::GenericPluginConfig& config,
+void VoronoiLayer::ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
                                  uint32_t level) {
   enabled_ = config.enabled;
 }
 
-const DynamicVoronoi& VoronoiLayer::getVoronoi() const { return voronoi_; }
-
-boost::mutex& VoronoiLayer::getMutex() { return mutex_; }
-
 void VoronoiLayer::updateBounds(double robot_x, double robot_y,
                                 double robot_yaw, double* min_x, double* min_y,
-                                double* max_x, double* max_y) {
-  if (!enabled_) {
-    return;
-  }
-}
+                                double* max_x, double* max_y) {}
 
-void VoronoiLayer::outlineMap(unsigned char* costarr, int nx, int ny,
-                              unsigned char value) {
-  unsigned char* pc = costarr;
-  for (int i = 0; i < nx; i++) {
-    *pc++ = value;
-  }
-  pc = costarr + (ny - 1) * nx;
-  for (int i = 0; i < nx; i++) {
-    *pc++ = value;
-  }
-  pc = costarr;
-  for (int i = 0; i < ny; i++, pc += nx) {
-    *pc = value;
-  }
-  pc = costarr + nx - 1;
-  for (int i = 0; i < ny; i++, pc += nx) {
-    *pc = value;
-  }
-}
-
-void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i,
-                               int min_j, int max_i, int max_j) {
-  if (!enabled_) {
-    return;
-  }
-
-  boost::unique_lock<boost::mutex> lock(mutex_);
-
+bool VoronoiLayer::OutlineMap(const costmap_2d::Costmap2D& master_grid,
+                              uint8_t value) {
+  uint8_t* char_map = master_grid.getCharMap();
   unsigned int size_x = master_grid.getSizeInCellsX();
   unsigned int size_y = master_grid.getSizeInCellsY();
-  outlineMap(master_grid.getCharMap(), size_x, size_y,
-             costmap_2d::LETHAL_OBSTACLE);
+  if (char_map == nullptr) {
+    LOG(ERROR) << "char_map == nullptr";
+    return false;
+  }
 
+  uint8_t* pc = char_map;
+  for (unsigned int i = 0U; i < size_x; ++i) {
+    *pc++ = value;
+  }
+  pc = char_map + (size_y - 1U) * size_x;
+  for (unsigned int i = 0U; i < size_x; ++i) {
+    *pc++ = value;
+  }
+  pc = char_map;
+  for (unsigned int i = 0U; i < size_y; ++i, pc += size_x) {
+    *pc = value;
+  }
+  pc = char_map + size_x - 1U;
+  for (unsigned int i = 0U; i < size_y; ++i, pc += size_x) {
+    *pc = value;
+  }
+  return true;
+}
+
+void VoronoiLayer::UpdateDynamicVoronoi(
+    const costmap_2d::Costmap2D& master_grid) {
+  unsigned int size_x = master_grid.getSizeInCellsX();
+  unsigned int size_y = master_grid.getSizeInCellsY();
   if (last_size_x_ != size_x || last_size_y_ != size_y) {
     voronoi_.initializeEmpty(size_x, size_y);
 
@@ -109,7 +102,8 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i,
     last_size_y_ = size_y;
   }
 
-  std::vector<IntPoint> new_free_cells, new_occupied_cells;
+  std::vector<IntPoint> new_free_cells;
+  std::vector<IntPoint> new_occupied_cells;
   for (unsigned int j = 0; j < size_y; ++j) {
     for (unsigned int i = 0; i < size_x; ++i) {
       if (voronoi_.isOccupied(i, j) &&
@@ -124,56 +118,75 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i,
     }
   }
 
-  for (size_t i = 0; i < new_free_cells.size(); ++i) {
+  for (std::size_t i = 0U; i < new_free_cells.size(); ++i) {
     voronoi_.clearCell(new_free_cells[i].x, new_free_cells[i].y);
   }
 
-  for (size_t i = 0; i < new_occupied_cells.size(); ++i) {
+  for (std::size_t i = 0U; i < new_occupied_cells.size(); ++i) {
     voronoi_.occupyCell(new_occupied_cells[i].x, new_occupied_cells[i].y);
   }
+}
 
-  // start timing
+void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i,
+                               int min_j, int max_i, int max_j) {
+  if (!enabled_) {
+    LOG(ERROR) << "VoronoiLayer is disable.";
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  if (!OutlineMap(master_grid, costmap_2d::LETHAL_OBSTACLE)) {
+    LOG(ERROR) << "Failed to outline map.";
+    return;
+  }
+
+  UpdateDynamicVoronoi(master_grid);
+
+  // Start timing.
   const auto start_timestamp = std::chrono::system_clock::now();
 
   voronoi_.update();
   voronoi_.prune();
 
-  // end timing
+  // End timing.
   const auto end_timestamp = std::chrono::system_clock::now();
   const std::chrono::duration<double> diff = end_timestamp - start_timestamp;
-  ROS_DEBUG("Runtime=%.3fms.", diff.count() * 1e3);
+  VLOG(4) << std::fixed << "Runtime=" << diff.count() * 1e3 << "ms.";
 
-  publishVoronoiGrid(master_grid);
+  PublishVoronoiGrid(master_grid);
 }
 
-void VoronoiLayer::publishVoronoiGrid(
+void VoronoiLayer::PublishVoronoiGrid(
     const costmap_2d::Costmap2D& master_grid) {
-  unsigned int nx = master_grid.getSizeInCellsX();
-  unsigned int ny = master_grid.getSizeInCellsY();
-
+  unsigned int size_x = master_grid.getSizeInCellsX();
+  unsigned int size_y = master_grid.getSizeInCellsY();
   double resolution = master_grid.getResolution();
+  double origin_x = master_grid.getOriginX();
+  double origin_y = master_grid.getOriginY();
+
+  // Publish whole grid.
   nav_msgs::OccupancyGrid grid;
-  // Publish Whole Grid
   grid.header.frame_id = "map";
   grid.header.stamp = ros::Time::now();
   grid.info.resolution = resolution;
 
-  grid.info.width = nx;
-  grid.info.height = ny;
+  grid.info.width = size_x;
+  grid.info.height = size_y;
 
-  grid.info.origin.position.x = master_grid.getOriginX();
-  grid.info.origin.position.y = master_grid.getOriginY();
+  grid.info.origin.position.x = origin_x;
+  grid.info.origin.position.y = origin_y;
   grid.info.origin.position.z = 0.0;
   grid.info.origin.orientation.w = 1.0;
 
-  grid.data.resize(nx * ny);
+  grid.data.resize(size_x * size_y);
 
-  for (unsigned int x = 0; x < nx; x++) {
-    for (unsigned int y = 0; y < ny; y++) {
+  for (unsigned int x = 0; x < size_x; ++x) {
+    for (unsigned int y = 0; y < size_y; ++y) {
       if (voronoi_.isVoronoi(x, y)) {
-        grid.data[x + y * nx] = 128;
+        grid.data[x + y * size_x] = 128;
       } else {
-        grid.data[x + y * nx] = 0;
+        grid.data[x + y * size_x] = 0;
       }
     }
   }

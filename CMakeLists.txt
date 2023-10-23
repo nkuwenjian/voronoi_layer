@@ -17,10 +17,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
+# Glog
+find_package(glog REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include third_party
   LIBRARIES voronoi_layer
-  CATKIN_DEPENDS costmap_2d dynamic_reconfigure nav_msgs roscpp
+  CATKIN_DEPENDS
+    costmap_2d
+    dynamic_reconfigure
+    nav_msgs
+    roscpp
 #  DEPENDS system_lib
 )
 
@@ -31,4 +38,4 @@ include_directories(
 )
 
 add_library(voronoi_layer third_party/dynamicvoronoi/dynamicvoronoi.cpp src/voronoi_layer.cpp)
-target_link_libraries(voronoi_layer ${catkin_LIBRARIES})
+target_link_libraries(voronoi_layer ${catkin_LIBRARIES} glog::glog)

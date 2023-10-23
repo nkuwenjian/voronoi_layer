@@ -32,8 +32,7 @@
 #pragma once
 
 #include <memory>
-
-#include <boost/thread.hpp>
+#include <mutex>  // NOLINT
 
 #include "costmap_2d/GenericPluginConfig.h"
 #include "costmap_2d/cost_values.h"
@@ -57,15 +56,16 @@ class VoronoiLayer : public Layer {
                     double* max_y) override;
   void updateCosts(costmap_2d::Costmap2D& master_grid, int min_i, int min_j,
                    int max_i, int max_j) override;
-  const DynamicVoronoi& getVoronoi() const;
-  boost::mutex& getMutex();
+
+  const DynamicVoronoi& voronoi() const { return voronoi_; }
+  std::mutex& mutex() { return mutex_; }
 
  private:
-  void publishVoronoiGrid(const costmap_2d::Costmap2D& master_grid);
-  void outlineMap(unsigned char* costarr, int nx, int ny, unsigned char value);
-
-  void reconfigureCB(const costmap_2d::GenericPluginConfig& config,
+  bool OutlineMap(const costmap_2d::Costmap2D& master_grid, uint8_t value);
+  void UpdateDynamicVoronoi(const costmap_2d::Costmap2D& master_grid);
+  void ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
                      uint32_t level);
+  void PublishVoronoiGrid(const costmap_2d::Costmap2D& master_grid);
   std::unique_ptr<dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>
       dsrv_ = nullptr;
   ros::Publisher voronoi_grid_pub_;
@@ -73,7 +73,7 @@ class VoronoiLayer : public Layer {
   DynamicVoronoi voronoi_;
   unsigned int last_size_x_ = 0;
   unsigned int last_size_y_ = 0;
-  boost::mutex mutex_;
+  std::mutex mutex_;
 };
 
 }  // namespace costmap_2d
