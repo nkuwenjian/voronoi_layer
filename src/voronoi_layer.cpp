@@ -45,17 +45,6 @@ void VoronoiLayer::onInitialize() {
   current_ = true;
 
   voronoi_grid_pub_ = nh.advertise<nav_msgs::OccupancyGrid>("voronoi_grid", 1);
-
-  dsrv_ = std::make_unique<
-      dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>(nh);
-  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType
-      cb = boost::bind(&VoronoiLayer::ReconfigureCB, this, _1, _2);
-  dsrv_->setCallback(cb);
-}
-
-void VoronoiLayer::ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
-                                 uint32_t level) {
-  enabled_ = config.enabled;
 }
 
 void VoronoiLayer::updateBounds(double robot_x, double robot_y,
@@ -96,7 +85,8 @@ void VoronoiLayer::UpdateDynamicVoronoi(
   unsigned int size_x = master_grid.getSizeInCellsX();
   unsigned int size_y = master_grid.getSizeInCellsY();
   if (last_size_x_ != size_x || last_size_y_ != size_y) {
-    voronoi_.initializeEmpty(size_x, size_y);
+    voronoi_.initializeEmpty(static_cast<int>(size_x),
+                             static_cast<int>(size_y));
 
     last_size_x_ = size_x;
     last_size_y_ = size_y;
@@ -104,26 +94,26 @@ void VoronoiLayer::UpdateDynamicVoronoi(
 
   std::vector<IntPoint> new_free_cells;
   std::vector<IntPoint> new_occupied_cells;
-  for (unsigned int j = 0; j < size_y; ++j) {
-    for (unsigned int i = 0; i < size_x; ++i) {
+  for (int j = 0; j < static_cast<int>(size_y); ++j) {
+    for (int i = 0; i < static_cast<int>(size_x); ++i) {
       if (voronoi_.isOccupied(i, j) &&
           master_grid.getCost(i, j) == costmap_2d::FREE_SPACE) {
-        new_free_cells.push_back(IntPoint(i, j));
+        new_free_cells.emplace_back(i, j);
       }
 
       if (!voronoi_.isOccupied(i, j) &&
           master_grid.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE) {
-        new_occupied_cells.push_back(IntPoint(i, j));
+        new_occupied_cells.emplace_back(i, j);
       }
     }
   }
 
-  for (std::size_t i = 0U; i < new_free_cells.size(); ++i) {
-    voronoi_.clearCell(new_free_cells[i].x, new_free_cells[i].y);
+  for (const IntPoint& cell : new_free_cells) {
+    voronoi_.clearCell(cell.x, cell.y);
   }
 
-  for (std::size_t i = 0U; i < new_occupied_cells.size(); ++i) {
-    voronoi_.occupyCell(new_occupied_cells[i].x, new_occupied_cells[i].y);
+  for (const IntPoint& cell : new_occupied_cells) {
+    voronoi_.occupyCell(cell.x, cell.y);
   }
 }
 
@@ -181,12 +171,12 @@ void VoronoiLayer::PublishVoronoiGrid(
 
   grid.data.resize(size_x * size_y);
 
-  for (unsigned int x = 0; x < size_x; ++x) {
-    for (unsigned int y = 0; y < size_y; ++y) {
+  for (int x = 0; x < static_cast<int>(size_x); ++x) {
+    for (int y = 0; y < static_cast<int>(size_y); ++y) {
       if (voronoi_.isVoronoi(x, y)) {
-        grid.data[x + y * size_x] = 128;
+        grid.data[x + y * size_x] = 128U;
       } else {
-        grid.data[x + y * size_x] = 0;
+        grid.data[x + y * size_x] = 0U;
       }
     }
   }

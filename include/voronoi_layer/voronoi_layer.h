@@ -38,7 +38,6 @@
 #include "costmap_2d/cost_values.h"
 #include "costmap_2d/layer.h"
 #include "costmap_2d/layered_costmap.h"
-#include "dynamic_reconfigure/server.h"
 #include "dynamicvoronoi/dynamicvoronoi.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "ros/ros.h"
@@ -48,7 +47,7 @@ namespace costmap_2d {
 class VoronoiLayer : public Layer {
  public:
   VoronoiLayer() = default;
-  virtual ~VoronoiLayer() = default;
+  ~VoronoiLayer() override = default;
 
   void onInitialize() override;
   void updateBounds(double robot_x, double robot_y, double robot_yaw,
@@ -61,13 +60,10 @@ class VoronoiLayer : public Layer {
   std::mutex& mutex() { return mutex_; }
 
  private:
-  bool OutlineMap(const costmap_2d::Costmap2D& master_grid, uint8_t value);
+  static bool OutlineMap(const costmap_2d::Costmap2D& master_grid,
+                         uint8_t value);
   void UpdateDynamicVoronoi(const costmap_2d::Costmap2D& master_grid);
-  void ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
-                     uint32_t level);
   void PublishVoronoiGrid(const costmap_2d::Costmap2D& master_grid);
-  std::unique_ptr<dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>
-      dsrv_ = nullptr;
   ros::Publisher voronoi_grid_pub_;
 
   DynamicVoronoi voronoi_;
