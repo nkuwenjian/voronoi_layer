@@ -32,6 +32,7 @@
 #include "voronoi_layer/voronoi_layer.h"
 
 #include <chrono>  // NOLINT
+#include <vector>
 
 #include "glog/logging.h"
 #include "pluginlib/class_list_macros.h"
