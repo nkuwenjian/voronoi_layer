@@ -18,6 +18,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   costmap_2d
+  dynamic_reconfigure
   nav_msgs
 )
 
@@ -29,6 +30,7 @@ catkin_package(
   LIBRARIES voronoi_layer
   CATKIN_DEPENDS
     costmap_2d
+    dynamic_reconfigure
     nav_msgs
 )
 

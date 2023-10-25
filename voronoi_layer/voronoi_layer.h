@@ -38,6 +38,7 @@
 #include "costmap_2d/cost_values.h"
 #include "costmap_2d/layer.h"
 #include "costmap_2d/layered_costmap.h"
+#include "dynamic_reconfigure/server.h"
 #include "dynamicvoronoi/dynamicvoronoi.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "ros/ros.h"
@@ -63,8 +64,10 @@ class VoronoiLayer : public Layer {
   static bool OutlineMap(const costmap_2d::Costmap2D& master_grid,
                          uint8_t value);
   void UpdateDynamicVoronoi(const costmap_2d::Costmap2D& master_grid);
-  void PublishVoronoiGrid(const costmap_2d::Costmap2D& master_grid);
-  ros::Publisher voronoi_grid_pub_;
+  void ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
+                     uint32_t level);
+  std::unique_ptr<dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>
+      dsrv_ = nullptr;
 
   DynamicVoronoi voronoi_;
   unsigned int last_size_x_ = 0;

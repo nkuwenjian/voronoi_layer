@@ -45,7 +45,16 @@ void VoronoiLayer::onInitialize() {
   ros::NodeHandle nh("~/" + name_);
   current_ = true;
 
-  voronoi_grid_pub_ = nh.advertise<nav_msgs::OccupancyGrid>("voronoi_grid", 1);
+  dsrv_ = std::make_unique<
+      dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>>(nh);
+  dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType
+      cb = [this](auto&& PH1, auto&& PH2) { ReconfigureCB(PH1, PH2); };
+  dsrv_->setCallback(cb);
+}
+
+void VoronoiLayer::ReconfigureCB(const costmap_2d::GenericPluginConfig& config,
+                                 uint32_t level) {
+  enabled_ = config.enabled;
 }
 
 void VoronoiLayer::updateBounds(double robot_x, double robot_y,
@@ -144,44 +153,6 @@ void VoronoiLayer::updateCosts(costmap_2d::Costmap2D& master_grid, int min_i,
   const auto end_timestamp = std::chrono::system_clock::now();
   const std::chrono::duration<double> diff = end_timestamp - start_timestamp;
   VLOG(4) << std::fixed << "Runtime=" << diff.count() * 1e3 << "ms.";
-
-  PublishVoronoiGrid(master_grid);
-}
-
-void VoronoiLayer::PublishVoronoiGrid(
-    const costmap_2d::Costmap2D& master_grid) {
-  unsigned int size_x = master_grid.getSizeInCellsX();
-  unsigned int size_y = master_grid.getSizeInCellsY();
-  double resolution = master_grid.getResolution();
-  double origin_x = master_grid.getOriginX();
-  double origin_y = master_grid.getOriginY();
-
-  // Publish whole grid.
-  nav_msgs::OccupancyGrid grid;
-  grid.header.frame_id = "map";
-  grid.header.stamp = ros::Time::now();
-  grid.info.resolution = resolution;
-
-  grid.info.width = size_x;
-  grid.info.height = size_y;
-
-  grid.info.origin.position.x = origin_x;
-  grid.info.origin.position.y = origin_y;
-  grid.info.origin.position.z = 0.0;
-  grid.info.origin.orientation.w = 1.0;
-
-  grid.data.resize(size_x * size_y);
-
-  for (int x = 0; x < static_cast<int>(size_x); ++x) {
-    for (int y = 0; y < static_cast<int>(size_y); ++y) {
-      if (voronoi_.isVoronoi(x, y)) {
-        grid.data[x + y * size_x] = 128U;
-      } else {
-        grid.data[x + y * size_x] = 0U;
-      }
-    }
-  }
-  voronoi_grid_pub_.publish(grid);
 }
 
 }  // namespace costmap_2d
